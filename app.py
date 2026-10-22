@@ -8,20 +8,16 @@ from src.risk_engine import (
     get_summary,
     get_risk_scorecard,
 )
+
 from src.generator import generate_answer
 
-
-# --------------------------------------------------
 # PAGE CONFIGURATION
-# --------------------------------------------------
 st.set_page_config(
     page_title="AgriRisk AI | Agricultural Risk Intelligence",
     page_icon="🌱",
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
-
 # --------------------------------------------------
 # CUSTOM STYLING
 # --------------------------------------------------
@@ -56,10 +52,21 @@ st.markdown(
     [data-testid="stSidebar"] {
         background: linear-gradient(180deg, #e9f5eb 0%, #f5faf5 72%, #e0f0e4 100%);
         border-right: 1px solid #d6e6d9;
+        color: #173b2c;
     }
 
     [data-testid="stSidebar"] > div:first-child {
         padding-top: 1.2rem;
+    }
+
+    /* Sidebar text visibility */
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3,
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+        color: #173b2c !important;
     }
 
     .brand-lockup {
@@ -172,8 +179,9 @@ st.markdown(
         min-height: 125px;
     }
 
-    div[data-testid="stMetricLabel"] {
-        color: #577061;
+    div[data-testid="stMetricLabel"],
+    div[data-testid="stMetricLabel"] p {
+        color: #577061 !important;
         font-weight: 600;
         font-size: 0.86rem;
     }
@@ -189,13 +197,27 @@ st.markdown(
         font-size: 0.76rem;
     }
 
+    /* FIX: readable active and inactive tab labels */
     div[data-testid="stTabs"] button {
         border-radius: 10px 10px 0 0;
         font-weight: 700;
+        color: #355746 !important;
+        opacity: 1 !important;
     }
 
-    div[data-testid="stTabs"] button[aria-selected="true"] {
-        color: #0f6b45;
+    div[data-testid="stTabs"] button p,
+    div[data-testid="stTabs"] button span,
+    div[data-testid="stTabs"] button div {
+        color: #355746 !important;
+        opacity: 1 !important;
+    }
+
+    div[data-testid="stTabs"] button[aria-selected="true"],
+    div[data-testid="stTabs"] button[aria-selected="true"] p,
+    div[data-testid="stTabs"] button[aria-selected="true"] span,
+    div[data-testid="stTabs"] button[aria-selected="true"] div {
+        color: #0f6b45 !important;
+        opacity: 1 !important;
     }
 
     div[data-testid="stTabs"] [data-baseweb="tab-highlight"] {
@@ -258,54 +280,18 @@ st.markdown(
     }
 
     @media (max-width: 768px) {
-        .hero { padding: 1.2rem; }
-        .hero-title { font-size: 1.9rem; }
+        .hero {
+            padding: 1.2rem;
+        }
+
+        .hero-title {
+            font-size: 1.9rem;
+        }
     }
-    /* Improve text readability across the dashboard */
-.stApp,
-[data-testid="stSidebar"] {
-    color: #173b2c;
-}
-
-/* Sidebar headings, labels, and captions */
-[data-testid="stSidebar"] h1,
-[data-testid="stSidebar"] h2,
-[data-testid="stSidebar"] h3,
-[data-testid="stSidebar"] label,
-[data-testid="stSidebar"] p,
-[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
-    color: #173b2c !important;
-}
-
-/* All tab labels, including inactive tabs */
-div[data-testid="stTabs"] button,
-div[data-testid="stTabs"] button p {
-    color: #355746 !important;
-    font-weight: 700;
-}
-
-/* Keep the selected tab green */
-div[data-testid="stTabs"] button[aria-selected="true"],
-div[data-testid="stTabs"] button[aria-selected="true"] p {
-    color: #0f6b45 !important;
-}
-
-/* Metric labels */
-div[data-testid="stMetricLabel"],
-div[data-testid="stMetricLabel"] p {
-    color: #577061 !important;
-}
-
-/* General captions */
-[data-testid="stCaptionContainer"] {
-    color: #64786b !important;
-}
     </style>
     """,
     unsafe_allow_html=True,
 )
-
-
 # --------------------------------------------------
 # LOAD DATA
 # --------------------------------------------------
@@ -326,18 +312,38 @@ if df.empty:
 
 
 # Automatically identify a year column (case-insensitive).
-year_lookup = {str(column).strip().lower(): column for column in df.columns}
-year_candidates = ["year", "record_year", "data_year", "harvest_year", "season_year"]
-year_column = next((year_lookup[name] for name in year_candidates if name in year_lookup), None)
+year_lookup = {
+    str(column).strip().lower(): column
+    for column in df.columns
+}
+
+year_candidates = [
+    "year",
+    "record_year",
+    "data_year",
+    "harvest_year",
+    "season_year",
+]
+
+year_column = next(
+    (
+        year_lookup[name]
+        for name in year_candidates
+        if name in year_lookup
+    ),
+    None,
+)
 
 if year_column is None:
     year_column = next(
-        (column for column in df.columns if "year" in str(column).strip().lower()),
+        (
+            column
+            for column in df.columns
+            if "year" in str(column).strip().lower()
+        ),
         None,
     )
-
-
-# --------------------------------------------------
+    # --------------------------------------------------
 # SIDEBAR FILTERS
 # --------------------------------------------------
 st.sidebar.markdown(
@@ -350,26 +356,49 @@ st.sidebar.markdown(
     """,
     unsafe_allow_html=True,
 )
+
 st.sidebar.divider()
 st.sidebar.markdown("### ⚙️ Dashboard Filters")
 st.sidebar.caption("Choose the records you want to analyze.")
 
+
 if "country" in df.columns:
-    countries = sorted(df["country"].dropna().astype(str).unique().tolist())
-    selected_country = st.sidebar.selectbox("🌍 Country", ["All"] + countries)
+    countries = sorted(
+        df["country"].dropna().astype(str).unique().tolist()
+    )
+    selected_country = st.sidebar.selectbox(
+        "🌍 Country",
+        ["All"] + countries,
+    )
 else:
     selected_country = "All"
 
+
 if "crop" in df.columns:
-    crops = sorted(df["crop"].dropna().astype(str).unique().tolist())
-    selected_crop = st.sidebar.selectbox("🌾 Crop", ["All"] + crops)
+    crops = sorted(
+        df["crop"].dropna().astype(str).unique().tolist()
+    )
+    selected_crop = st.sidebar.selectbox(
+        "🌾 Crop",
+        ["All"] + crops,
+    )
 else:
     selected_crop = "All"
 
+
 selected_year = "All"
+
 if year_column is not None:
-    year_values = pd.to_numeric(df[year_column], errors="coerce").dropna()
-    years = sorted(year_values.astype(int).unique().tolist(), reverse=True)
+    year_values = pd.to_numeric(
+        df[year_column],
+        errors="coerce",
+    ).dropna()
+
+    years = sorted(
+        year_values.astype(int).unique().tolist(),
+        reverse=True,
+    )
+
     selected_year = st.sidebar.selectbox(
         "📅 Year",
         options=["All"] + years,
@@ -377,36 +406,57 @@ if year_column is not None:
         help="Filter the dashboard by the selected year.",
     )
 else:
-    st.sidebar.info("No year column was detected in the supplied dataset.")
+    st.sidebar.info(
+        "No year column was detected in the supplied dataset."
+    )
+
 
 st.sidebar.divider()
 
-# Show a small dataset summary in the sidebar.
+# Dataset snapshot
 st.sidebar.markdown("### 📌 Dataset Snapshot")
 st.sidebar.metric("Total records", f"{len(df):,}")
-st.sidebar.caption("Use the dropdowns above to filter the dashboard.")
+
+st.sidebar.caption(
+    "Use the dropdowns above to filter the dashboard."
+)
+
 st.sidebar.markdown(
     """
     <div class="insight-box">
         <div class="insight-title">🌿 Data note</div>
-        <span class="small-note">This dashboard summarizes the supplied dataset. It does not provide live farm monitoring or independently validated forecasts.</span>
+        <span class="small-note">
+            This dashboard summarizes the supplied dataset.
+            It does not provide live farm monitoring or
+            independently validated forecasts.
+        </span>
     </div>
     """,
     unsafe_allow_html=True,
 )
-
-
 # --------------------------------------------------
 # APPLY FILTERS
 # --------------------------------------------------
-filtered_df = filter_records(df, country=selected_country, crop=selected_crop)
+filtered_df = filter_records(
+    df,
+    country=selected_country,
+    crop=selected_crop,
+)
 
 if selected_year != "All" and year_column is not None:
-    numeric_years = pd.to_numeric(filtered_df[year_column], errors="coerce")
-    filtered_df = filtered_df[numeric_years == int(selected_year)]
+    numeric_years = pd.to_numeric(
+        filtered_df[year_column],
+        errors="coerce",
+    )
+    filtered_df = filtered_df[
+        numeric_years == int(selected_year)
+    ]
 
 if filtered_df.empty:
-    st.warning("No records match the selected filters. Please change one or more filters.")
+    st.warning(
+        "No records match the selected filters. "
+        "Please change one or more filters."
+    )
     st.stop()
 
 
@@ -416,382 +466,862 @@ if filtered_df.empty:
 st.markdown(
     f"""
     <div class="hero">
-        <div class="hero-kicker">Agricultural risk intelligence platform</div>
+        <div class="hero-kicker">
+            Agricultural risk intelligence platform
+        </div>
         <div class="hero-title">AgriRisk AI</div>
         <div class="hero-copy">
             Understand agricultural risk patterns, explore dataset insights,
             and retrieve supporting advisory information to inform smarter decisions.
         </div>
-        <div class="hero-pill">🌱 Data-driven insights &nbsp; • &nbsp; 🌾 Smarter farming decisions</div>
+        <div class="hero-pill">
+            🌱 Data-driven insights &nbsp; • &nbsp;
+            🌾 Smarter farming decisions
+        </div>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
 st.caption(
-    f"Current selection  ·  Country: **{selected_country}**  ·  "
-    f"Crop: **{selected_crop}**  ·  Year: **{selected_year}**"
+    f"Current selection · Country: **{selected_country}** · "
+    f"Crop: **{selected_crop}** · Year: **{selected_year}**"
 )
 
+
+# --------------------------------------------------
+# DASHBOARD TABS
+# --------------------------------------------------
 tab1, tab2, tab3, tab4 = st.tabs(
-    ["📊 Risk Overview", "🎯 Risk Scorecard", "🤖 AI Advisory", "🔎 Explore Dataset"]
+    [
+        "📊 Risk Overview",
+        "🎯 Risk Scorecard",
+        "🤖 AI Advisory",
+        "🔎 Explore Dataset",
+    ]
 )
-
-
 # --------------------------------------------------
 # TAB 1: RISK OVERVIEW
 # --------------------------------------------------
 with tab1:
-    st.markdown('<div class="section-heading">Agricultural Risk Overview</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="section-copy">A quick view of the selected records, risk distribution, and recorded indicators.</div>',
+        '<div class="section-heading">📊 Agricultural Risk Overview</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<div class="section-copy">'
+        'Explore key indicators and patterns in the filtered agricultural dataset.'
+        '</div>',
         unsafe_allow_html=True,
     )
 
-    total_records = len(filtered_df)
-    if "risk_category" in filtered_df.columns:
-        risk_counts = filtered_df["risk_category"].value_counts()
-        high_critical = (
-            filtered_df["risk_category"].astype(str).str.strip().str.lower()
-            .isin(["high", "critical"]).sum()
+    # Identify numeric columns for metrics and charts
+    numeric_columns = filtered_df.select_dtypes(
+        include="number"
+    ).columns.tolist()
+
+    # Summary metrics
+    metric1, metric2, metric3, metric4 = st.columns(4)
+
+    with metric1:
+        st.metric(
+            "Filtered Records",
+            f"{len(filtered_df):,}",
         )
-        high_critical_pct = high_critical / total_records * 100 if total_records else 0
+
+    with metric2:
+        if "country" in filtered_df.columns:
+            country_count = filtered_df["country"].nunique()
+        else:
+            country_count = 0
+
+        st.metric(
+            "Countries",
+            f"{country_count:,}",
+        )
+
+    with metric3:
+        if "crop" in filtered_df.columns:
+            crop_count = filtered_df["crop"].nunique()
+        else:
+            crop_count = 0
+
+        st.metric(
+            "Crop Types",
+            f"{crop_count:,}",
+        )
+
+    with metric4:
+        st.metric(
+            "Numeric Indicators",
+            f"{len(numeric_columns):,}",
+        )
+
+    st.divider()
+
+    # Country distribution
+    left_chart, right_chart = st.columns(2)
+
+    with left_chart:
+        st.markdown("#### 🌍 Records by Country")
+
+        if "country" in filtered_df.columns:
+            country_data = (
+                filtered_df["country"]
+                .fillna("Unknown")
+                .astype(str)
+                .value_counts()
+                .head(12)
+                .reset_index()
+            )
+            country_data.columns = ["Country", "Records"]
+
+            fig_country = px.bar(
+                country_data,
+                x="Country",
+                y="Records",
+                color="Records",
+                color_continuous_scale="Greens",
+                title="Top Countries in Selected Data",
+            )
+
+            fig_country.update_layout(
+                template="plotly_white",
+                showlegend=False,
+                coloraxis_showscale=False,
+                margin=dict(l=10, r=10, t=55, b=10),
+                xaxis_title="Country",
+                yaxis_title="Number of Records",
+            )
+
+            st.plotly_chart(
+                fig_country,
+                use_container_width=True,
+            )
+        else:
+            st.info(
+                "A country column is not available in this dataset."
+            )
+
+    # Crop distribution
+    with right_chart:
+        st.markdown("#### 🌾 Records by Crop")
+
+        if "crop" in filtered_df.columns:
+            crop_data = (
+                filtered_df["crop"]
+                .fillna("Unknown")
+                .astype(str)
+                .value_counts()
+                .head(12)
+                .reset_index()
+            )
+            crop_data.columns = ["Crop", "Records"]
+
+            fig_crop = px.bar(
+                crop_data,
+                x="Crop",
+                y="Records",
+                color="Records",
+                color_continuous_scale="Teal",
+                title="Top Crops in Selected Data",
+            )
+
+            fig_crop.update_layout(
+                template="plotly_white",
+                showlegend=False,
+                coloraxis_showscale=False,
+                margin=dict(l=10, r=10, t=55, b=10),
+                xaxis_title="Crop",
+                yaxis_title="Number of Records",
+            )
+
+            st.plotly_chart(
+                fig_crop,
+                use_container_width=True,
+            )
+        else:
+            st.info(
+                "A crop column is not available in this dataset."
+            )
+
+    st.divider()
+
+    # Numeric indicator distribution
+    st.markdown("#### 📈 Numeric Indicator Analysis")
+
+    if numeric_columns:
+        selected_indicator = st.selectbox(
+            "Choose a numeric indicator",
+            options=numeric_columns,
+            key="overview_numeric_indicator",
+        )
+
+        indicator_data = pd.to_numeric(
+            filtered_df[selected_indicator],
+            errors="coerce",
+        ).dropna()
+
+        if not indicator_data.empty:
+            chart_left, chart_right = st.columns(2)
+
+            with chart_left:
+                fig_hist = px.histogram(
+                    x=indicator_data,
+                    nbins=25,
+                    title=f"Distribution of {selected_indicator}",
+                    labels={"x": selected_indicator, "count": "Records"},
+                    color_discrete_sequence=["#15803d"],
+                )
+
+                fig_hist.update_layout(
+                    template="plotly_white",
+                    margin=dict(l=10, r=10, t=55, b=10),
+                )
+
+                st.plotly_chart(
+                    fig_hist,
+                    use_container_width=True,
+                )
+
+            with chart_right:
+                summary_stats = indicator_data.describe()
+
+                stats_df = pd.DataFrame(
+                    {
+                        "Statistic": [
+                            "Count",
+                            "Mean",
+                            "Standard Deviation",
+                            "Minimum",
+                            "25th Percentile",
+                            "Median",
+                            "75th Percentile",
+                            "Maximum",
+                        ],
+                        "Value": [
+                            summary_stats.get("count", 0),
+                            summary_stats.get("mean", 0),
+                            summary_stats.get("std", 0),
+                            summary_stats.get("min", 0),
+                            summary_stats.get("25%", 0),
+                            summary_stats.get("50%", 0),
+                            summary_stats.get("75%", 0),
+                            summary_stats.get("max", 0),
+                        ],
+                    }
+                )
+
+                stats_df["Value"] = stats_df["Value"].round(3)
+
+                st.markdown("##### Descriptive Statistics")
+                st.dataframe(
+                    stats_df,
+                    hide_index=True,
+                    use_container_width=True,
+                )
+        else:
+            st.info(
+                "No valid numeric values are available for this indicator."
+            )
     else:
-        risk_counts = pd.Series(dtype=int)
-        high_critical_pct = 0
+        st.info(
+            "No numeric columns are available for charting."
+        )
 
-    def average_of(column):
-        if column in filtered_df.columns:
-            return pd.to_numeric(filtered_df[column], errors="coerce").mean()
-        return float("nan")
+    st.markdown(
+        """
+        <div class="insight-box">
+            <div class="insight-title">💡 How to interpret this page</div>
+            <span class="small-note">
+                These charts describe the records in the selected dataset.
+                They show distributions and descriptive statistics, not
+                independently validated agricultural risk predictions.
+            </span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    # --------------------------------------------------
+# TAB 2: RISK SCORECARD
+# --------------------------------------------------
+with tab2:
+    st.markdown(
+        '<div class="section-heading">🎯 Agricultural Risk Scorecard</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<div class="section-copy">'
+        'Review the available indicators and their distributions '
+        'for your selected dataset.'
+        '</div>',
+        unsafe_allow_html=True,
+    )
 
-    climate_avg = average_of("climate_stress_index")
-    disease_avg = average_of("disease_risk_score")
-    pest_avg = average_of("pest_risk_score")
+    # Identify potential risk-related columns
+    risk_keywords = [
+        "risk",
+        "score",
+        "severity",
+        "vulnerability",
+        "impact",
+        "probability",
+        "likelihood",
+        "loss",
+        "damage",
+        "yield",
+        "drought",
+        "flood",
+        "temperature",
+        "rainfall",
+        "precipitation",
+    ]
 
-    metric_columns = st.columns(4)
-    metric_columns[0].metric("📚 Records Analyzed", f"{total_records:,}", help="Records after applying the sidebar filters.")
-    metric_columns[1].metric("🚨 High / Critical Risk", f"{high_critical_pct:.2f}%", help="Share of selected records labelled High or Critical.")
-    metric_columns[2].metric("🌡️ Avg. Climate Stress", f"{climate_avg:.2f}" if pd.notna(climate_avg) else "N/A")
-    metric_columns[3].metric("🦠 Avg. Disease Risk", f"{disease_avg:.2f}" if pd.notna(disease_avg) else "N/A")
+    risk_columns = [
+        column
+        for column in filtered_df.columns
+        if any(
+            keyword in str(column).lower()
+            for keyword in risk_keywords
+        )
+    ]
 
-    st.write("")
-    left, right = st.columns([1, 1.15], gap="large")
+    numeric_risk_columns = [
+        column
+        for column in risk_columns
+        if pd.api.types.is_numeric_dtype(filtered_df[column])
+    ]
 
-    with left:
-        with st.container(border=True):
-            st.markdown("#### 🧭 Risk Category Distribution")
-            if not risk_counts.empty:
-                risk_chart = risk_counts.rename_axis("Risk Category").reset_index(name="Records")
-                fig = px.pie(
-                    risk_chart,
-                    names="Risk Category",
-                    values="Records",
-                    hole=0.62,
-                    color="Risk Category",
-                    color_discrete_map={
-                        "Low": "#36a66a",
-                        "Moderate": "#f4c542",
-                        "High": "#f28c45",
-                        "Critical": "#e45454",
-                    },
-                )
-                fig.update_traces(
-                    textposition="outside",
-                    textinfo="percent",
-                    hovertemplate="<b>%{label}</b><br>Records: %{value:,}<br>Share: %{percent}<extra></extra>",
-                    marker=dict(line=dict(color="#ffffff", width=3)),
-                )
-                fig.update_layout(
-                    margin=dict(t=10, b=10, l=10, r=10),
-                    legend_title_text="Risk level",
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(family="DM Sans, sans-serif", color="#294c39"),
-                    showlegend=True,
-                )
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("Risk category data is unavailable.")
+    # Scorecard summary
+    score_col1, score_col2, score_col3, score_col4 = st.columns(4)
 
-    with right:
-        with st.container(border=True):
-            st.markdown("#### 📈 Average Risk Indicators")
-            indicator_columns = [
-                column for column in
-                ["climate_stress_index", "disease_risk_score", "pest_risk_score"]
-                if column in filtered_df.columns
-            ]
-            if indicator_columns:
-                indicator_data = pd.DataFrame({
-                    "Indicator": [column.replace("_", " ").title() for column in indicator_columns],
-                    "Average": [
-                        pd.to_numeric(filtered_df[column], errors="coerce").mean()
-                        for column in indicator_columns
+    with score_col1:
+        st.metric(
+            "Filtered Records",
+            f"{len(filtered_df):,}",
+        )
+
+    with score_col2:
+        st.metric(
+            "Risk-Related Fields",
+            f"{len(risk_columns):,}",
+        )
+
+    with score_col3:
+        st.metric(
+            "Numeric Risk Indicators",
+            f"{len(numeric_risk_columns):,}",
+        )
+
+    with score_col4:
+        completeness = (
+            filtered_df.notna().sum().sum()
+            / max(filtered_df.size, 1)
+        ) * 100
+
+        st.metric(
+            "Data Completeness",
+            f"{completeness:.1f}%",
+        )
+
+    st.divider()
+
+    if numeric_risk_columns:
+        st.markdown("#### 📋 Indicator Scorecard")
+
+        scorecard_rows = []
+
+        for column in numeric_risk_columns:
+            values = pd.to_numeric(
+                filtered_df[column],
+                errors="coerce",
+            ).dropna()
+
+            if values.empty:
+                continue
+
+            scorecard_rows.append(
+                {
+                    "Indicator": str(column),
+                    "Mean": round(values.mean(), 3),
+                    "Median": round(values.median(), 3),
+                    "Minimum": round(values.min(), 3),
+                    "Maximum": round(values.max(), 3),
+                    "Std. Deviation": round(values.std(), 3),
+                    "Valid Records": int(values.count()),
+                }
+            )
+
+        if scorecard_rows:
+            scorecard_df = pd.DataFrame(scorecard_rows)
+
+            st.dataframe(
+                scorecard_df,
+                hide_index=True,
+                use_container_width=True,
+            )
+
+            st.markdown("#### 📊 Compare Indicators")
+
+            selected_score_columns = st.multiselect(
+                "Choose indicators to compare",
+                options=numeric_risk_columns,
+                default=numeric_risk_columns[:min(3, len(numeric_risk_columns))],
+                key="scorecard_compare_columns",
+            )
+
+            if selected_score_columns:
+                comparison_rows = []
+
+                for column in selected_score_columns:
+                    values = pd.to_numeric(
+                        filtered_df[column],
+                        errors="coerce",
+                    ).dropna()
+
+                    if not values.empty:
+                        comparison_rows.append(
+                            {
+                                "Indicator": str(column),
+                                "Mean": values.mean(),
+                            }
+                        )
+
+                if comparison_rows:
+                    comparison_df = pd.DataFrame(comparison_rows)
+
+                    fig_scorecard = px.bar(
+                        comparison_df,
+                        x="Indicator",
+                        y="Mean",
+                        color="Mean",
+                        color_continuous_scale="Greens",
+                        title="Mean Values of Selected Indicators",
+                    )
+
+                    fig_scorecard.update_layout(
+                        template="plotly_white",
+                        showlegend=False,
+                        coloraxis_showscale=False,
+                        margin=dict(l=10, r=10, t=55, b=10),
+                        xaxis_title="Indicator",
+                        yaxis_title="Mean Value",
+                    )
+
+                    st.plotly_chart(
+                        fig_scorecard,
+                        use_container_width=True,
+                    )
+        else:
+            st.info(
+                "No valid numeric values were found in the "
+                "identified risk-related fields."
+            )
+
+    else:
+        st.info(
+            "No numeric risk-related fields were detected. "
+            "The scorecard below shows the available dataset fields "
+            "so you can inspect the data."
+        )
+
+        st.write("**Available columns**")
+
+        st.dataframe(
+            pd.DataFrame(
+                {
+                    "Column": [str(column) for column in filtered_df.columns],
+                    "Data Type": [
+                        str(filtered_df[column].dtype)
+                        for column in filtered_df.columns
                     ],
-                }).dropna(subset=["Average"])
-                fig = px.bar(
-                    indicator_data,
-                    x="Indicator",
-                    y="Average",
-                    text_auto=".2f",
-                    color="Indicator",
-                    color_discrete_sequence=["#48a868", "#f3bd3d", "#4298db"],
-                )
-                fig.update_traces(
-                    textposition="outside",
-                    marker_line_width=0,
-                    hovertemplate="%{x}<br>Average: %{y:.2f}<extra></extra>",
-                )
-                fig.update_layout(
-                    margin=dict(t=20, b=15, l=10, r=10),
-                    xaxis_title="",
-                    yaxis_title="Average score",
-                    showlegend=False,
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(family="DM Sans, sans-serif", color="#294c39"),
-                    yaxis=dict(gridcolor="#e5eee7", zeroline=False),
-                )
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("Risk indicator columns are unavailable.")
+                    "Non-null Values": [
+                        int(filtered_df[column].notna().sum())
+                        for column in filtered_df.columns
+                    ],
+                }
+            ),
+            hide_index=True,
+            use_container_width=True,
+        )
 
-    action_col, insight_col = st.columns([1.15, 1], gap="large")
+    st.markdown(
+        """
+        <div class="insight-box">
+            <div class="insight-title">⚠️ Interpretation note</div>
+            <span class="small-note">
+                The statistics above summarize observed dataset values.
+                A high or low value is not automatically a risk level.
+                Validated risk thresholds and a documented scoring method
+                are required before indicators can be interpreted as
+                actual agricultural risk scores.
+            </span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    # --------------------------------------------------
+# TAB 3: AI ADVISORY
+# --------------------------------------------------
+with tab3:
+    st.markdown(
+        '<div class="section-heading">🤖 AI Agricultural Advisory</div>',
+        unsafe_allow_html=True,
+    )
 
-    with action_col:
-        with st.container(border=True):
-            st.markdown("#### 🛠️ Most Frequently Recorded Actions")
-            if "recommended_action" in filtered_df.columns:
-                actions = (
-                    filtered_df["recommended_action"].dropna().astype(str).value_counts()
-                    .head(5).rename_axis("Recommended Action").reset_index(name="Records")
-                )
-                if not actions.empty:
-                    action_fig = px.bar(
-                        actions.sort_values("Records", ascending=True),
-                        x="Records",
-                        y="Recommended Action",
-                        orientation="h",
-                        text="Records",
-                    )
-                    action_fig.update_traces(
-                        marker_color="#269b75",
-                        texttemplate="%{text:,}",
-                        textposition="outside",
-                        cliponaxis=False,
-                        hovertemplate="%{y}<br>Records: %{x:,}<extra></extra>",
-                    )
-                    action_fig.update_layout(
-                        margin=dict(t=10, b=10, l=5, r=35),
-                        xaxis_title="Number of records",
-                        yaxis_title="",
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        plot_bgcolor="rgba(0,0,0,0)",
-                        font=dict(family="DM Sans, sans-serif", color="#294c39"),
-                        xaxis=dict(gridcolor="#e5eee7", zeroline=False),
-                    )
-                    st.plotly_chart(action_fig, use_container_width=True)
-                else:
-                    st.info("No recommended actions are available.")
-            else:
-                st.info("The recommended_action column is unavailable.")
+    st.markdown(
+        '<div class="section-copy">'
+        'Ask questions about agricultural risks and explore '
+        'insights relevant to your selected dataset.'
+        '</div>',
+        unsafe_allow_html=True,
+    )
 
-    with insight_col:
-        with st.container(border=True):
-            st.markdown("#### 💡 Key Insights")
-            if not risk_counts.empty:
-                dominant_risk = risk_counts.idxmax()
-                dominant_count = int(risk_counts.max())
-                dominant_pct = dominant_count / total_records * 100 if total_records else 0
+    # Current dataset context
+    st.markdown(
+        f"""
+        <div class="insight-box">
+            <div class="insight-title">🌱 Current Analysis Context</div>
+            <span class="small-note">
+                Country: {selected_country} &nbsp; | &nbsp;
+                Crop: {selected_crop} &nbsp; | &nbsp;
+                Year: {selected_year} &nbsp; | &nbsp;
+                Records: {len(filtered_df):,}
+            </span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("#### 💬 Ask an Agricultural Question")
+
+    # Suggested questions
+    suggested_questions = [
+        "What agricultural risks should farmers monitor?",
+        "How can farmers reduce the impact of drought?",
+        "What measures can help protect crops from heavy rainfall?",
+        "How can data analysis support agricultural risk management?",
+    ]
+
+    selected_question = st.selectbox(
+        "Choose a suggested question or type your own below",
+        options=["Choose a question..."] + suggested_questions,
+        key="advisory_suggested_question",
+    )
+
+    with st.form("agri_advisory_form"):
+        user_question = st.text_area(
+            "Your question",
+            value=(
+                selected_question
+                if selected_question != "Choose a question..."
+                else ""
+            ),
+            placeholder=(
+                "Example: What steps can farmers take to reduce "
+                "crop losses during drought?"
+            ),
+            height=120,
+        )
+
+        submit_question = st.form_submit_button(
+            "✨ Generate Advisory",
+            type="primary",
+            use_container_width=True,
+        )
+
+    if submit_question:
+        if not user_question.strip():
+            st.warning("Please enter a question first.")
+        else:
+            # Build context for the advisory backend
+            advisory_context = (
+                f"Selected country: {selected_country}\n"
+                f"Selected crop: {selected_crop}\n"
+                f"Selected year: {selected_year}\n"
+                f"Number of filtered records: {len(filtered_df)}\n"
+                f"Available dataset columns: "
+                f"{', '.join(map(str, filtered_df.columns))}\n"
+            )
+
+            try:
+                with st.spinner("Generating agricultural advisory..."):
+                    # The existing backend may accept different arguments.
+                    # This call assumes generate_answer accepts a question.
+                    answer = generate_answer(user_question.strip())
+
+                st.markdown("#### 📝 Advisory Response")
+
                 st.markdown(
-                    f"""
+                    """
                     <div class="insight-box">
-                        <div class="insight-title">Most common risk category</div>
-                        <div><b>{dominant_risk}</b> represents {dominant_pct:.2f}% of the selected records ({dominant_count:,} rows).</div>
+                        <div class="insight-title">AI-Generated Insight</div>
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
 
-            indicators = {
-                "Climate stress": climate_avg,
-                "Disease risk": disease_avg,
-                "Pest risk": pest_avg,
-            }
-            valid_indicators = {k: v for k, v in indicators.items() if pd.notna(v)}
-            if valid_indicators:
-                highest_indicator = max(valid_indicators, key=valid_indicators.get)
-                st.write(f"• **Highest average indicator:** {highest_indicator} ({valid_indicators[highest_indicator]:.2f}).")
-
-            if "recommended_action" in filtered_df.columns:
-                top_action = filtered_df["recommended_action"].dropna().astype(str).value_counts()
-                if not top_action.empty:
-                    st.write(f"• **Most recorded action:** {top_action.index[0]} ({int(top_action.iloc[0]):,} records).")
-
-            st.caption("These are descriptive statistics from the supplied dataset, not calibrated predictions of future crop failure.")
-
-
-# --------------------------------------------------
-# TAB 2: RISK SCORECARD
-# --------------------------------------------------
-with tab2:
-    st.markdown('<div class="section-heading">Risk Scorecard</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="section-copy">A compact summary of the risk metrics calculated for the current selection.</div>',
-        unsafe_allow_html=True,
-    )
-
-    scorecard = get_risk_scorecard(filtered_df)
-    if isinstance(scorecard, dict):
-        score_columns = st.columns(min(max(len(scorecard), 1), 4))
-        for index, (label, value) in enumerate(scorecard.items()):
-            with score_columns[index % len(score_columns)]:
-                if isinstance(value, float):
-                    display_value = f"{value:.2f}"
+                if answer is None:
+                    st.warning(
+                        "The advisory backend returned no response."
+                    )
                 else:
-                    display_value = f"{value:,}" if isinstance(value, int) else str(value)
-                st.metric(label.replace("_", " ").title(), display_value)
+                    st.markdown(str(answer))
 
-        with st.expander("View scorecard values as structured data"):
-            st.json(scorecard)
-    else:
-        st.write(scorecard)
-
-    with st.container(border=True):
-        st.markdown("#### 📋 Filtered Dataset Summary")
-        st.write(f"Records in the current selection: **{len(filtered_df):,}**")
-        if "risk_category" in filtered_df.columns:
-            summary = (
-                filtered_df["risk_category"].value_counts()
-                .rename_axis("Risk Category").reset_index(name="Records")
-            )
-            summary["Share (%)"] = (summary["Records"] / len(filtered_df) * 100).round(2)
-            st.dataframe(summary, use_container_width=True, hide_index=True)
-
-
-# --------------------------------------------------
-# TAB 3: AI ADVISORY
-# --------------------------------------------------
-with tab3:
-    st.markdown('<div class="section-heading">Agricultural Risk Advisory</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="section-copy">Ask a question about agricultural risks and inspect the supporting advisory references.</div>',
-        unsafe_allow_html=True,
-    )
-
-    with st.container(border=True):
-        st.markdown("#### 💬 What would you like to understand?")
-        question = st.text_area(
-            "Enter your question",
-            placeholder="Example: What actions can help manage high pest risk?",
-            height=110,
-            key="agri_question",
-            label_visibility="collapsed",
-        )
-        st.caption(
-            f"Current context: {selected_country} · {selected_crop} · {selected_year}"
-        )
-
-        if st.button("✨ Generate Advisory", type="primary", use_container_width=True):
-            if not question.strip():
-                st.warning("Please enter a question first.")
-            else:
-                with st.spinner("Analyzing dataset insights and retrieving advisory information..."):
-                    try:
-                        result = generate_answer(
-                            question,
-                            country=selected_country,
-                            crop=selected_crop,
-                        )
-                        st.session_state["advisory_result"] = result
-                        st.session_state["advisory_question"] = question
-                    except Exception as exc:
-                        st.error(f"Unable to generate advisory: {exc}")
-
-    result = st.session_state.get("advisory_result")
-    if result:
-        with st.container(border=True):
-            st.markdown("#### 🌿 Advisory Response")
-            if isinstance(result, dict):
-                answer = result.get("answer", "No answer was returned.")
-                citations = result.get("citations", [])
-                st.markdown(answer)
-
-                if citations:
-                    st.markdown("#### 📚 Supporting References")
-                    for citation in citations:
-                        ref_id = citation.get("id", "Reference")
-                        topic = citation.get("topic", "Agricultural advisory")
-                        with st.expander(f"📄 {ref_id} — {topic}"):
-                            st.write(citation.get("text", ""))
-                            source = citation.get("source")
-                            if source:
-                                st.caption(f"Source: {source}")
-                            url = citation.get("url")
-                            if isinstance(url, str) and url.startswith(("https://", "http://")):
-                                st.markdown(f"[Open source ↗]({url})")
-                            similarity = citation.get("similarity")
-                            if isinstance(similarity, (float, int)):
-                                st.caption(f"Retrieval similarity: {similarity:.3f}")
-                st.info(
-                    "Advisory content is informational. Verify recommendations with authoritative agricultural sources before making farming decisions."
+                st.caption(
+                    "Advisory responses are informational. Verify "
+                    "recommendations against local agricultural guidance "
+                    "and current conditions before acting on them."
                 )
-            else:
-                st.write(result)
 
+            except Exception as exc:
+                st.error(
+                    "The advisory could not be generated. "
+                    "Check the generate_answer function in "
+                    "src/generator.py and review the error below."
+                )
+                st.exception(exc)
 
-# --------------------------------------------------
+    st.divider()
+
+    st.markdown("#### 📌 Advisory Guidelines")
+
+    guideline1, guideline2 = st.columns(2)
+
+    with guideline1:
+        st.markdown(
+            """
+            <div class="insight-box">
+                <div class="insight-title">🌦️ Weather and Crop Risks</div>
+                <span class="small-note">
+                    Consider rainfall, temperature, water availability,
+                    crop sensitivity, and local forecasts when evaluating
+                    agricultural risks.
+                </span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with guideline2:
+        st.markdown(
+            """
+            <div class="insight-box">
+                <div class="insight-title">📊 Data-Driven Decisions</div>
+                <span class="small-note">
+                    Use reliable observations and local expertise to
+                    interpret agricultural data. Historical records alone
+                    may not represent current field conditions.
+                </span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        # --------------------------------------------------
 # TAB 4: EXPLORE DATASET
 # --------------------------------------------------
 with tab4:
-    st.markdown('<div class="section-heading">Explore Agricultural Dataset</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="section-copy">Search, inspect, and export the records that match your sidebar filters.</div>',
+        '<div class="section-heading">🔎 Explore Agricultural Dataset</div>',
         unsafe_allow_html=True,
     )
 
-    st.metric("Records in current selection", f"{len(filtered_df):,}")
-    search_text = st.text_input(
-        "🔎 Search within the filtered dataset",
-        placeholder="Search for a country, crop, risk category, or action...",
+    st.markdown(
+        '<div class="section-copy">'
+        'Inspect records, explore data quality, and export the data '
+        'selected using the sidebar filters.'
+        '</div>',
+        unsafe_allow_html=True,
     )
 
-    display_df = filtered_df.copy()
-    if search_text.strip():
-        text_columns = display_df.select_dtypes(include=["object", "string"]).columns
-        if len(text_columns) > 0:
-            matches = display_df[text_columns].apply(
-                lambda column: column.astype(str).str.contains(
-                    search_text, case=False, na=False, regex=False
+    # Dataset overview
+    data_col1, data_col2, data_col3, data_col4 = st.columns(4)
+
+    with data_col1:
+        st.metric("Records", f"{len(filtered_df):,}")
+
+    with data_col2:
+        st.metric("Columns", f"{len(filtered_df.columns):,}")
+
+    with data_col3:
+        missing_count = int(filtered_df.isna().sum().sum())
+        st.metric("Missing Values", f"{missing_count:,}")
+
+    with data_col4:
+        duplicate_count = int(filtered_df.duplicated().sum())
+        st.metric("Duplicate Rows", f"{duplicate_count:,}")
+
+    st.divider()
+
+    # Select columns to display
+    st.markdown("#### 🗂️ Select Columns")
+
+    all_columns = filtered_df.columns.tolist()
+
+    selected_columns = st.multiselect(
+        "Choose the columns to display",
+        options=all_columns,
+        default=all_columns[:min(8, len(all_columns))],
+        key="explore_selected_columns",
+    )
+
+    if selected_columns:
+        display_df = filtered_df[selected_columns].copy()
+
+        # Optional text search
+        search_text = st.text_input(
+            "🔍 Search displayed records",
+            placeholder="Enter a word, country, crop, or value...",
+            key="explore_search_text",
+        )
+
+        if search_text.strip():
+            search_mask = display_df.astype(str).apply(
+                lambda column: column.str.contains(
+                    search_text.strip(),
+                    case=False,
+                    na=False,
+                    regex=False,
                 )
             ).any(axis=1)
-            display_df = display_df[matches]
 
-    st.caption(f"Showing {len(display_df):,} matching records.")
-    st.dataframe(display_df, use_container_width=True, hide_index=True)
+            display_df = display_df.loc[search_mask]
 
-    csv_data = display_df.to_csv(index=False).encode("utf-8")
-    st.download_button(
-        label="⬇️ Download Filtered Dataset as CSV",
-        data=csv_data,
-        file_name="agririsk_filtered_dataset.csv",
-        mime="text/csv",
+        st.caption(
+            f"Showing {len(display_df):,} matching records."
+        )
+
+        st.dataframe(
+            display_df,
+            use_container_width=True,
+            hide_index=True,
+            height=420,
+        )
+
+        # Download the currently selected columns and matching records
+        csv_data = display_df.to_csv(index=False).encode("utf-8")
+
+        st.download_button(
+            label="⬇️ Download Displayed Data (CSV)",
+            data=csv_data,
+            file_name="agririsk_filtered_dataset.csv",
+            mime="text/csv",
+            use_container_width=True,
+        )
+
+    else:
+        st.info(
+            "Select at least one column to preview and download data."
+        )
+
+    st.divider()
+
+    # Data quality report
+    st.markdown("#### 🧹 Data Quality Report")
+
+    quality_df = pd.DataFrame(
+        {
+            "Column": [str(column) for column in filtered_df.columns],
+            "Data Type": [
+                str(filtered_df[column].dtype)
+                for column in filtered_df.columns
+            ],
+            "Non-null Values": [
+                int(filtered_df[column].notna().sum())
+                for column in filtered_df.columns
+            ],
+            "Missing Values": [
+                int(filtered_df[column].isna().sum())
+                for column in filtered_df.columns
+            ],
+            "Missing (%)": [
+                round(
+                    filtered_df[column].isna().mean() * 100,
+                    2,
+                )
+                for column in filtered_df.columns
+            ],
+            "Unique Values": [
+                int(filtered_df[column].nunique(dropna=True))
+                for column in filtered_df.columns
+            ],
+        }
     )
 
-    st.caption(
-        "Dataset-derived results describe the supplied records; they are not independently validated real-time forecasts."
+    st.dataframe(
+        quality_df,
+        use_container_width=True,
+        hide_index=True,
     )
 
+    # Missing-value visualization
+    missing_df = quality_df[
+        quality_df["Missing Values"] > 0
+    ].sort_values(
+        "Missing (%)",
+        ascending=False,
+    )
 
-# --------------------------------------------------
+    if not missing_df.empty:
+        st.markdown("#### 📉 Missing Values by Column")
+
+        fig_missing = px.bar(
+            missing_df,
+            x="Column",
+            y="Missing (%)",
+            color="Missing (%)",
+            color_continuous_scale="Greens",
+            title="Percentage of Missing Values",
+        )
+
+        fig_missing.update_layout(
+            template="plotly_white",
+            showlegend=False,
+            coloraxis_showscale=False,
+            margin=dict(l=10, r=10, t=55, b=10),
+            xaxis_title="Column",
+            yaxis_title="Missing Values (%)",
+        )
+
+        st.plotly_chart(
+            fig_missing,
+            use_container_width=True,
+        )
+    else:
+        st.success(
+            "No missing values were found in the filtered dataset."
+        )
+
+    st.markdown(
+        """
+        <div class="insight-box">
+            <div class="insight-title">📌 Dataset transparency</div>
+            <span class="small-note">
+                The explorer displays the records supplied by the dataset
+                and applies the selected filters. Downloading the data
+                does not add predictions or modify the original source.
+            </span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    # --------------------------------------------------
 # FOOTER
 # --------------------------------------------------
 st.divider()
+
 st.markdown(
     """
-    <div style="text-align:center; color:#718278; font-size:0.8rem; padding:0.3rem 0 0.8rem 0;">
-        🌱 <b>AgriRisk AI</b> · Agricultural Risk Intelligence · Built for data-driven exploration
+    <div style="text-align:center; padding: 0.8rem 0 1.2rem 0;">
+        <div style="font-weight:800; color:#14532d;">
+            🌱 AgriRisk AI
+        </div>
+        <div style="font-size:0.78rem; color:#718278; margin-top:0.3rem;">
+            Agricultural Risk Intelligence Dashboard
+        </div>
+        <div style="font-size:0.72rem; color:#718278; margin-top:0.25rem;">
+            Data-driven insights for agricultural risk exploration
+        </div>
     </div>
     """,
     unsafe_allow_html=True,

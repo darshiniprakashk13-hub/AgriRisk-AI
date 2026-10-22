@@ -261,6 +261,45 @@ st.markdown(
         .hero { padding: 1.2rem; }
         .hero-title { font-size: 1.9rem; }
     }
+    /* Improve text readability across the dashboard */
+.stApp,
+[data-testid="stSidebar"] {
+    color: #173b2c;
+}
+
+/* Sidebar headings, labels, and captions */
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+    color: #173b2c !important;
+}
+
+/* All tab labels, including inactive tabs */
+div[data-testid="stTabs"] button,
+div[data-testid="stTabs"] button p {
+    color: #355746 !important;
+    font-weight: 700;
+}
+
+/* Keep the selected tab green */
+div[data-testid="stTabs"] button[aria-selected="true"],
+div[data-testid="stTabs"] button[aria-selected="true"] p {
+    color: #0f6b45 !important;
+}
+
+/* Metric labels */
+div[data-testid="stMetricLabel"],
+div[data-testid="stMetricLabel"] p {
+    color: #577061 !important;
+}
+
+/* General captions */
+[data-testid="stCaptionContainer"] {
+    color: #64786b !important;
+}
     </style>
     """,
     unsafe_allow_html=True,

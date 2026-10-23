@@ -631,11 +631,15 @@ with tab2:
             st.dataframe(summary, use_container_width=True, hide_index=True)
 
 
+
 # --------------------------------------------------
 # TAB 3: AI ADVISORY
 # --------------------------------------------------
 with tab3:
-    st.markdown('<div class="section-heading">Agricultural Risk Advisory</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-heading">Agricultural Risk Advisory</div>',
+        unsafe_allow_html=True,
+    )
     st.markdown(
         '<div class="section-copy">Ask a question about agricultural risks and inspect the supporting advisory references.</div>',
         unsafe_allow_html=True,
@@ -643,63 +647,116 @@ with tab3:
 
     with st.container(border=True):
         st.markdown("#### 💬 What would you like to understand?")
+
+        suggested_questions = [
+            "Choose a suggested question...",
+            "What actions can help manage high pest risk?",
+            "How can farmers reduce disease risk?",
+            "What factors contribute to high climate stress?",
+            "What actions are recommended for high-risk crops?",
+            "How can farmers prepare for agricultural climate risks?",
+            "Summarize the main risks for the selected country and crop.",
+        ]
+
+        selected_question = st.selectbox(
+            "Suggested questions",
+            options=suggested_questions,
+            key="suggested_question",
+        )
+
         question = st.text_area(
             "Enter your question",
-            placeholder="Example: What actions can help manage high pest risk?",
+            placeholder="Select a suggested question above or type your own...",
             height=110,
             key="agri_question",
             label_visibility="collapsed",
         )
+
+        final_question = question.strip()
+
+        if (
+            not final_question
+            and selected_question != "Choose a suggested question..."
+        ):
+            final_question = selected_question
+
         st.caption(
-            f"Current context: {selected_country} · {selected_crop} · {selected_year}"
+            f"Current context: {selected_country} · "
+            f"{selected_crop} · {selected_year}"
         )
 
-        if st.button("✨ Generate Advisory", type="primary", use_container_width=True):
-            if not question.strip():
-                st.warning("Please enter a question first.")
+        if st.button(
+            "✨ Generate Advisory",
+            type="primary",
+            use_container_width=True,
+        ):
+            if not final_question:
+                st.warning(
+                    "Please enter a question or select a suggestion first."
+                )
             else:
-                with st.spinner("Analyzing dataset insights and retrieving advisory information..."):
+                with st.spinner(
+                    "Analyzing dataset insights and retrieving advisory information..."
+                ):
                     try:
                         result = generate_answer(
-                            question,
+                            final_question,
                             country=selected_country,
                             crop=selected_crop,
                         )
+
                         st.session_state["advisory_result"] = result
-                        st.session_state["advisory_question"] = question
+                        st.session_state["advisory_question"] = final_question
+
                     except Exception as exc:
                         st.error(f"Unable to generate advisory: {exc}")
 
     result = st.session_state.get("advisory_result")
+
     if result:
         with st.container(border=True):
             st.markdown("#### 🌿 Advisory Response")
+
             if isinstance(result, dict):
                 answer = result.get("answer", "No answer was returned.")
                 citations = result.get("citations", [])
+
                 st.markdown(answer)
 
                 if citations:
                     st.markdown("#### 📚 Supporting References")
+
                     for citation in citations:
                         ref_id = citation.get("id", "Reference")
                         topic = citation.get("topic", "Agricultural advisory")
+
                         with st.expander(f"📄 {ref_id} — {topic}"):
                             st.write(citation.get("text", ""))
+
                             source = citation.get("source")
                             if source:
                                 st.caption(f"Source: {source}")
+
                             url = citation.get("url")
-                            if isinstance(url, str) and url.startswith(("https://", "http://")):
+                            if isinstance(url, str) and url.startswith(
+                                ("https://", "http://")
+                            ):
                                 st.markdown(f"[Open source ↗]({url})")
+
                             similarity = citation.get("similarity")
                             if isinstance(similarity, (float, int)):
-                                st.caption(f"Retrieval similarity: {similarity:.3f}")
+                                st.caption(
+                                    f"Retrieval similarity: {similarity:.3f}"
+                                )
+
                 st.info(
-                    "Advisory content is informational. Verify recommendations with authoritative agricultural sources before making farming decisions."
+                    "Advisory content is informational. Verify recommendations "
+                    "with authoritative agricultural sources before making "
+                    "farming decisions."
                 )
             else:
                 st.write(result)
+
 
 
 # --------------------------------------------------

@@ -109,6 +109,58 @@ st.markdown(
     }
     [data-testid="stAlert"] { border-radius: 12px; }
     hr { border-color: #dce9dc; }
+
+/* Improve overall text readability */
+.stApp {
+    color: #20352a;
+    font-size: 16px;
+}
+
+[data-testid="stSidebar"] {
+    color: #20352a;
+}
+
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span {
+    color: #20352a !important;
+    font-size: 14px !important;
+}
+
+/* Make metric headings and values clearer */
+[data-testid="stMetricLabel"] {
+    color: #355642 !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+}
+
+[data-testid="stMetricValue"] {
+    color: #17633a !important;
+    font-size: 28px !important;
+    font-weight: 700 !important;
+}
+
+/* Improve tab visibility */
+.stTabs [data-baseweb="tab"] {
+    color: #244c35 !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+}
+
+.stTabs [aria-selected="true"] {
+    color: #16733b !important;
+}
+
+/* Improve section headings */
+h1, h2, h3 {
+    color: #234b32 !important;
+}
+
+/* Improve dataframe text */
+[data-testid="stDataFrame"] {
+    font-size: 14px;
+}
+
     </style>
     """,
     unsafe_allow_html=True,
@@ -357,6 +409,21 @@ with tab1:
             fig.update_layout(
                 margin=dict(t=20, b=20, l=10, r=10)
             )
+            fig.update_layout(
+    paper_bgcolor="white",
+    plot_bgcolor="white",
+    font=dict(
+        color="#20352a",
+        size=13
+    ),
+    title_font=dict(
+        color="#234b32",
+        size=18
+    ),
+    legend=dict(
+        font=dict(color="#20352a", size=12)
+    )
+)
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("Risk category data is unavailable.")
